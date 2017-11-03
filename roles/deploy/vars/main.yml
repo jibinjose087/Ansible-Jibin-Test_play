@@ -1,2 +1,5 @@
 ---
 # vars file for webserver
+  become: true
+  become_method: sudo
+  become_user: dry
