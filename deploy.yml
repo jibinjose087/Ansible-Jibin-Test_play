@@ -2,7 +2,7 @@
 # deploy.yml includes deployment stuffs
 
 - hosts: all
-  ansible_become: true
+  become: true
   become_method: sudo
   become_user: dry
   roles:
