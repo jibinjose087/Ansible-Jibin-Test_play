@@ -3,6 +3,7 @@
 
 - hosts: all
   become: true
+  become_method: sudo
   become_user: dry
   roles:
-    - deploy
+    - deploys
