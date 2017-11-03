@@ -1,0 +1,18 @@
+---
+# vars file for common
+
+war_file: '{{ WAR_FILE }}'
+java_loc: "{{ JAVA_LOC }}"
+app_path: "{{ APP_PATH}}"
+war_file_down_loc: '{{ REPO_URL }}'
+zip_file_name: '{{ ZIP_FILE }}'
+war_file_deploy: sample
+war_file_loc: '/local/apps/AIS'
+date: "{{ lookup('pipe', 'date +%Y%m%d-%H:%M:%S') }}"
+dest_main: "/tmp"
+catalina_folder: "{{ app_path }}/work/Catalina/localhost"
+backup_loc: "/backup/AIS"
+tomcat6_hostname: "{{ TOMCAT_HOST }}"
+tomcat6_server_port: "{{ TOMCAT_PORT }}"
+tomcat6_catalina_port: "{{ TOMCAT_CATALINA_PORT }}"
+tomcat6_catalina_redirect_port: "{{ TOMCAT_CATALINA_RED_PORT }}"

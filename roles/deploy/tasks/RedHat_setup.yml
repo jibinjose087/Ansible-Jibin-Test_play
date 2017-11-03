@@ -1,0 +1,114 @@
+---
+# tasks file for common
+
+- name: download war file from GIT reporsitory
+  get_url:
+    url: '{{ war_file_down_loc }}'
+    dest: '{{ dest_main }}/{{ zip_file_name }}'
+    mode: 0777
+
+- name: extract the war file
+  unarchive:
+    src: '{{ dest_main }}/{{ zip_file_name }}'
+    dest: '{{ dest_main }}'
+    remote_src: yes
+
+- name: stop the tomcat service
+  service: name=tomcat state=stopped
+
+- name: verify tomcat stopped status
+  wait_for:
+    host: '127.0.0.1'
+    port: 8090
+    state: stopped
+    delay: 1
+    timeout: 60
+
+- name: verify tomcat is stopped or not
+  shell: ps -ef | grep tomcat8 | grep -v grep | wc -l
+  register: tomcat_process_status
+
+- name: create directory for backup
+  file:
+    path: '{{ backup_loc }}'
+    state: directory
+    owner: tomcat
+    group: tomcat
+    mode: 0755
+
+- name: checking the war file exists or not
+  stat:
+    path: '{{ war_file_loc }}/{{ war_file }}'
+  register: stat_result
+
+- name: copy war file to backup folder
+  copy:
+    src: '{{ war_file_loc }}/{{ war_file }}'
+    dest: '{{ backup_loc }}/{{ war_file }}_backup_{{ date }}'
+    remote_src: yes
+  when: stat_result.stat.exists == True
+
+- name: remove the deployed war files
+  file:
+    path: '{{ war_file_loc }}/{{ war_file_deploy}}'
+    state: absent
+  when: "stat_result.stat.exists == True and tomcat_process_status.stdout|int == 0"
+
+- name: copy war file to the deployment folder
+  copy:
+    src: '{{ dest_main }}/{{ war_file }}'
+    dest: '{{ war_file_loc }}/{{ war_file }}'
+    remote_src: yes
+    owner: tomcat
+    group: tomcat
+    backup: yes
+  when: "tomcat_process_status.stdout|int == 0"
+
+- name: copy standalone.xml file to deploy folder
+  template:
+    src: server.xml.j2
+    dest: '{{ app_path }}/webapps/server.xml'
+    owner: tomcat
+    group: tomcat
+    mode: 0644
+
+- name: remove java symlink from app folder
+  file:
+    path: "{{ war_file_loc }}/java"
+    state: absent
+
+- name: create java symlink again
+  file:
+    src: '{{ java_loc }}'
+    dest: '{{ war_file_loc }}/java'
+    owner: tomcat
+    group: tomcat
+    state: link
+
+- name: remove cache Catalina folder
+  file:
+    path: '{{ catalina_folder }}/{{ war_file_deploy }}'
+    state: absent
+  when: "tomcat_process_status.stdout|int == 0"
+
+- name: start tomcat service
+  service: name=tomcat state=started
+
+- name: wait for tomcat to startup
+  wait_for:
+    host: '127.0.0.1'
+    port: 8090
+    delay: 1
+    timeout: 60
+
+- name: checking the tomcat_process_status
+  shell: ps -ef | grep tomcat8 | grep -v grep | wc -l
+  register: tomcat_process_status_final
+
+- debug:
+    msg: "The deployment completed successfully and tomcat started"
+  when: "tomcat_process_status_final.stdout|int != 0"
+
+- debug:
+    msg: "The deployment seems to be failure and tomcat not started"
+  when: "tomcat_process_status_final.stdout|int == 0"

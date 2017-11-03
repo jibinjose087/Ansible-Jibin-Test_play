@@ -1,0 +1,6 @@
+---
+# deploy.yml includes deployment stuffs
+
+- hosts: all
+  roles:
+    - deploy
